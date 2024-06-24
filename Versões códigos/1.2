@@ -1,0 +1,143 @@
+# Constantes
+LIMITE_SALDO = 500
+LIMITE_SAQUES = 3
+MENSAGEM_OPERACAO_INVALIDA = "Operação inválida, por favor selecione novamente a operação desejada."
+
+# Variáveis globais
+clientes = []
+contas = []
+numero_saques = 0
+cliente_logado = None  # Variável para armazenar o cliente logado
+
+# Função para cadastrar um novo cliente
+def cadastrar_cliente():
+    nome = input("Nome do cliente: ")
+    sobrenome = input("Sobrenome do cliente: ")
+    cpf = input("CPF do cliente: ")
+    data_nascimento = input("Data de nascimento (DD/MM/AAAA): ")
+    cliente = {'nome': nome, 'sobrenome': sobrenome, 'cpf': cpf, 'data_nascimento': data_nascimento, 'saldo': 0, 'extrato': ''}
+    clientes.append(cliente)
+    print(f"Cliente {nome} {sobrenome} cadastrado com sucesso!")
+    return cliente
+
+# Função para encontrar um cliente pelo CPF
+def encontrar_cliente(cpf):
+    for cliente in clientes:
+        if cliente['cpf'] == cpf:
+            return cliente
+    return None
+
+# Função para realizar login
+def fazer_login():
+    global cliente_logado
+    cpf = input("Digite o CPF para login: ")
+    cliente = encontrar_cliente(cpf)
+    
+    if cliente:
+        print(f"Bem-vindo, {cliente['nome']}!")
+        cliente_logado = cliente
+    else:
+        print("Cliente não encontrado.")
+        return None
+    
+    return cliente_logado
+
+# Função para exibir menu de opções no início do programa
+def menu_inicial():
+    print("1. Cliente cadastrado")
+    print("2. Fazer cadastro")
+    opcao = input("Escolha uma opção: ")
+    return opcao
+
+# Função principal para iniciar o programa
+def main():
+    print("Bem-vindo ao sistema bancário!")
+
+    opcao = menu_inicial()
+
+    if opcao == "1":
+        cliente_logado = fazer_login()
+        while not cliente_logado:
+            print("Cliente não encontrado. Tente novamente.")
+            cliente_logado = fazer_login()
+    elif opcao == "2":
+        cliente_logado = cadastrar_cliente()
+    else:
+        print("Opção inválida. Encerrando programa.")
+        return
+    
+    if cliente_logado:
+        menu()
+
+# Função para cadastrar uma conta bancária vinculada ao cliente
+def cadastrar_conta():
+    if not clientes:
+        print("Não há clientes cadastrados. Cadastre um cliente primeiro.")
+        return
+    
+    print("Clientes disponíveis para cadastro de conta:")
+    for i, cliente in enumerate(clientes):
+        print(f"{i+1}. {cliente['nome']} {cliente['sobrenome']}")
+
+    cliente_index = int(input("Selecione o cliente pelo número: ")) - 1
+
+    nome = clientes[cliente_index]['nome']
+    sobrenome = clientes[cliente_index]['sobrenome']
+    agencia = '0001'
+    numero_conta = input("Número da conta: ")
+
+    conta = {'nome': nome, 'sobrenome': sobrenome, 'agencia': agencia, 'numero_conta': numero_conta}
+    contas.append(conta)
+    print(f"Conta cadastrada com sucesso para {nome} {sobrenome}.")
+
+# Função para realizar um depósito
+def depositar(saldo, valor, extrato):
+    saldo += valor
+    extrato += f"Depósito: R$ {valor:.2f}\n"
+    return saldo, extrato
+
+# Função para realizar um saque
+def sacar(saldo, valor, extrato):
+    saldo -= valor
+    extrato += f"Saque: R$ {valor:.2f}\n"
+    return saldo, extrato
+
+# Função para exibir extrato
+def exibir_extrato(saldo, extrato):
+    print("\n================ EXTRATO ================")
+    if not extrato:
+        print("Não foram realizadas movimentações.")
+    else:
+        print(extrato)
+    print(f"\nSaldo: R$ {saldo:.2f}")
+    print("==========================================")
+
+# Função principal para exibir o menu e processar operações
+def menu():
+    while True:
+        opcao = input("""
+[d] Depositar
+[s] Sacar
+[e] Extrato
+[c] Cadastrar Conta
+[q] Sair
+
+=> """).strip().lower()
+
+        if opcao == "d":
+            valor = float(input("Informe o valor do depósito: "))
+            cliente_logado['saldo'], cliente_logado['extrato'] = depositar(cliente_logado['saldo'], valor, cliente_logado['extrato'])
+        elif opcao == "s":
+            valor = float(input("Informe o valor do saque: "))
+            cliente_logado['saldo'], cliente_logado['extrato'] = sacar(cliente_logado['saldo'], valor, cliente_logado['extrato'])
+        elif opcao == "e":
+            exibir_extrato(cliente_logado['saldo'], cliente_logado['extrato'])
+        elif opcao == "c":
+            cadastrar_conta()
+        elif opcao == "q":
+            break
+        else:
+            print(MENSAGEM_OPERACAO_INVALIDA)
+
+if __name__ == "__main__":
+    main()
