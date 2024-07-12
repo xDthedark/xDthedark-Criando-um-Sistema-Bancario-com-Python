@@ -1,0 +1,176 @@
+# Constantes
+LIMITE_SAQUES_PF = 5
+LIMITE_SAQUES_PJ = 20
+LIMITE_TRANSFERENCIAS_PF = 5
+LIMITE_TRANSFERENCIAS_PJ = 20
+LIMITE_TRANSFERENCIA_VALOR_PF = 5000
+LIMITE_TRANSFERENCIA_VALOR_PJ = 20000
+
+MENSAGEM_OPERACAO_INVALIDA = "Operação inválida, por favor selecione novamente a operação desejada."
+
+# Classes para Pessoa Física e Jurídica
+class PessoaFisica:
+    def __init__(self, nome, data_nascimento, cpf):
+        self.nome = nome
+        self.data_nascimento = data_nascimento
+        self.cpf = cpf
+        self.limite_saques = LIMITE_SAQUES_PF
+        self.limite_transferencias = LIMITE_TRANSFERENCIAS_PF
+        self.limite_transferencia_valor = LIMITE_TRANSFERENCIA_VALOR_PF
+        self.saldo = 0
+        self.extrato = ""
+
+class PessoaJuridica:
+    def __init__(self, nome_fantasia, cnpj):
+        self.nome_fantasia = nome_fantasia
+        self.cnpj = cnpj
+        self.limite_saques = LIMITE_SAQUES_PJ
+        self.limite_transferencias = LIMITE_TRANSFERENCIAS_PJ
+        self.limite_transferencia_valor = LIMITE_TRANSFERENCIA_VALOR_PJ
+        self.saldo = 0
+        self.extrato = ""
+
+# Função para exibir o menu de opções no início do programa
+def menu_inicial():
+    while True:
+        print("1. Cliente cadastrado")
+        print("2. Fazer cadastro")
+        print("0. Sair")
+        opcao = input("Escolha uma opção: ").strip()
+        if opcao in ["0", "1", "2"]:
+            return opcao
+        else:
+            print(MENSAGEM_OPERACAO_INVALIDA)
+
+# Função para cadastrar um novo cliente
+def cadastrar_cliente():
+    while True:
+        tipo_cliente = input("Tipo de cliente (pf/pj) ou 'r' para retornar: ").strip().lower()
+        if tipo_cliente == 'r':
+            return None
+        elif tipo_cliente == "pf":
+            nome = input("Nome completo do cliente: ")
+            data_nascimento = input("Data de nascimento (DD/MM/AAAA): ")
+            cpf = input("CPF do cliente: ")
+            cliente = PessoaFisica(nome, data_nascimento, cpf)
+        elif tipo_cliente == "pj":
+            nome_fantasia = input("Nome fantasia da empresa: ")
+            cnpj = input("CNPJ da empresa: ")
+            cliente = PessoaJuridica(nome_fantasia, cnpj)
+        else:
+            print("Tipo de cliente inválido.")
+            continue
+
+        clientes.append(cliente)
+        print(f"Cliente cadastrado com sucesso!")
+        return cliente
+
+# Função para encontrar um cliente pelo CPF ou CNPJ
+def encontrar_cliente(identificacao):
+    for cliente in clientes:
+        if (hasattr(cliente, 'cpf') and cliente.cpf == identificacao) or \
+           (hasattr(cliente, 'cnpj') and cliente.cnpj == identificacao):
+            return cliente
+    return None
+
+# Função para realizar login
+def fazer_login():
+    while True:
+        identificacao = input("Digite o CPF ou CNPJ para login ou 'r' para retornar: ")
+        if identificacao.lower() == 'r':
+            return None
+        cliente = encontrar_cliente(identificacao)
+        
+        if cliente:
+            print(f"Bem-vindo, {cliente.nome if isinstance(cliente, PessoaFisica) else cliente.nome_fantasia}!")
+            return cliente
+        else:
+            print("Cliente não encontrado. Tente novamente.")
+
+# Função para realizar um depósito
+def depositar(cliente, valor):
+    if valor > 0:
+        cliente.saldo += valor
+        cliente.extrato += f"Depósito: R$ {valor:.2f}\n"
+        print("\n=== Depósito realizado com sucesso! ===")
+    else:
+        print("\n@@@ Operação falhou! O valor informado é inválido. @@@")
+    return cliente
+
+# Função para realizar um saque
+def sacar(cliente, valor):
+    if valor > 0:
+        if valor > cliente.saldo:
+            print("\n@@@ Operação falhou! Você não tem saldo suficiente. @@@")
+        elif valor > cliente.limite_transferencia_valor:
+            print("\n@@@ Operação falhou! O valor do saque excede o limite. @@@")
+        else:
+            cliente.saldo -= valor
+            cliente.extrato += f"Saque: R$ {valor:.2f}\n"
+            print("\n=== Saque realizado com sucesso! ===")
+    else:
+        print("\n@@@ Operação falhou! O valor informado é inválido. @@@")
+    return cliente
+
+# Função para exibir extrato
+def exibir_extrato(cliente):
+    print("\n================ EXTRATO ================")
+    if not cliente.extrato:
+        print("Não foram realizadas movimentações.")
+    else:
+        print(cliente.extrato)
+    print(f"\nSaldo: R$ {cliente.saldo:.2f}")
+    print("==========================================")
+
+# Função principal para exibir o menu e processar operações
+def menu(cliente_logado):
+    while True:
+        opcao = input("""
+[d] Depositar
+[s] Sacar
+[e] Extrato
+[r] Retornar ao menu anterior
+[q] Sair
+
+=> """).strip().lower()
+
+        if opcao == "d":
+            valor = float(input("Informe o valor do depósito ou 'r' para retornar: "))
+            if valor == 'r':
+                continue
+            cliente_logado = depositar(cliente_logado, valor)
+        elif opcao == "s":
+            valor = float(input("Informe o valor do saque ou 'r' para retornar: "))
+            if valor == 'r':
+                continue
+            cliente_logado = sacar(cliente_logado, valor)
+        elif opcao == "e":
+            exibir_extrato(cliente_logado)
+        elif opcao == "r":
+            return  # Retorna ao menu inicial
+        elif opcao == "q":
+            break
+        else:
+            print(MENSAGEM_OPERACAO_INVALIDA)
+
+# Função principal para iniciar o programa
+def main():
+    while True:
+        print("Bem-vindo ao sistema bancário!")
+        opcao = menu_inicial()
+
+        if opcao == "0":
+            print("Encerrando o programa.")
+            break
+        elif opcao == "1":
+            cliente_logado = fazer_login()
+            if cliente_logado:
+                menu(cliente_logado)
+        elif opcao == "2":
+            cliente_logado = cadastrar_cliente()
+            if cliente_logado:
+                menu(cliente_logado)
+
+if __name__ == "__main__":
+    clientes = []
+    main()
